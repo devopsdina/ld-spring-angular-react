@@ -1,0 +1,8 @@
+# Development image: runs Vite; `docker compose watch` syncs src/ edits in for hot module reload.
+FROM docker.io/library/node:24-slim
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+EXPOSE 3000
+CMD ["npx", "vite", "--host", "0.0.0.0", "--port", "3000", "--strictPort"]

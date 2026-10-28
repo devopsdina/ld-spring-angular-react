@@ -1,0 +1,85 @@
+# Runs the server and both UIs with live reload:
+#
+#   docker compose up --watch
+#
+# Server http://localhost:8080 · Angular http://localhost:4200 · React http://localhost:3000
+#
+# Needs server/.env (LAUNCHDARKLY_SDK_KEY), react/.env.local (VITE_LD_CLIENT_SIDE_ID) and
+# angular/src/environments/environment.ts (clientSideID). See the README.
+name: ld-spring-angular-react
+
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8080:8080"
+    env_file:
+      - path: ./server/.env
+        required: true
+    environment:
+      # Adds every certs/*.crt to the JVM trust store at startup, for TLS-inspecting proxies.
+      # See certs/README.md. With no files in certs/, nothing changes.
+      USE_SYSTEM_CA_CERTS: "1"
+    volumes:
+      # Keeps downloaded Maven dependencies between restarts.
+      - maven-cache:/root/.m2
+      - ./certs:/certificates:ro
+    develop:
+      watch:
+        # Java isn't hot-swapped: an edit syncs in and restarts the container, which recompiles.
+        - action: sync+restart
+          path: ./server/src
+          target: /app/src
+        - action: rebuild
+          path: ./server/pom.xml
+
+  angular:
+    build:
+      context: ./angular
+      dockerfile: Dockerfile.dev
+    ports:
+      - "4200:4200"
+    environment:
+      API_PROXY_TARGET: http://server:8080
+    depends_on:
+      - server
+    develop:
+      watch:
+        - action: sync
+          path: ./angular/src
+          target: /app/src
+        - action: rebuild
+          path: ./angular/package.json
+        - action: rebuild
+          path: ./angular/angular.json
+
+  react:
+    build:
+      context: ./react
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: ./react/.env.local
+        required: true
+    environment:
+      API_PROXY_TARGET: http://server:8080
+    depends_on:
+      - server
+    develop:
+      watch:
+        - action: sync
+          path: ./react/src
+          target: /app/src
+        - action: sync
+          path: ./react/public
+          target: /app/public
+        - action: rebuild
+          path: ./react/package.json
+        - action: rebuild
+          path: ./react/vite.config.ts
+
+volumes:
+  maven-cache:

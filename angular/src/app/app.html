@@ -1,0 +1,77 @@
+<div class="main">
+  <div class="row">
+    <div class="column">
+      @if (product(); as product) {
+        <div class="product">
+          <div class="productImage">
+            <img [src]="product.url" [alt]="product.name" />
+            <div class="productDetails">
+              <h3 class="productName">{{ product.name }}</h3>
+              <h2 class="productPrice">{{ product.price | currency }}</h2>
+              @if (product.discount > 0) {
+                <p class="productOriginalPrice">was {{ product.originalPrice | currency }}</p>
+              }
+            </div>
+          </div>
+        </div>
+      } @else if (error()) {
+        <p class="message">{{ error() }}</p>
+      } @else {
+        <p class="message">Loading a product&hellip;</p>
+      }
+    </div>
+    <div class="column">
+      <div class="orderFormBox">
+        <div class="orderForm">
+          <h3 class="orderFormTitle">Angular Order Form</h3>
+          <div class="input">
+            <label for="email">User's Email</label>
+            <div class="orderInput">
+              <input id="email" type="text" [value]="user.email" readonly />
+            </div>
+          </div>
+          <div class="input">
+            <label for="plan">User's Plan</label>
+            <div class="orderInput">
+              <input id="plan" type="text" [value]="user.plan" readonly />
+            </div>
+          </div>
+          <button
+            class="orderButton"
+            type="button"
+            (click)="placeOrder()"
+            [disabled]="!purchasing().value"
+          >
+            Place order
+          </button>
+
+          <dl class="flagInfo">
+            <dt>LaunchDarkly</dt>
+            <dd>
+              @switch (status()) {
+                @case ('complete') {
+                  connected
+                }
+                @case ('timeout') {
+                  no response within 500ms, using fallback values
+                }
+                @case ('failed') {
+                  failed to initialize, check the client-side ID
+                }
+                @default {
+                  initializing&hellip;
+                }
+              }
+            </dd>
+            <dt>enable-purchasing</dt>
+            <dd>{{ purchasing().value }} &middot; {{ purchaseReason() }}</dd>
+            @if (product(); as product) {
+              <dt>discount-pricing (server)</dt>
+              <dd>{{ product.discount }} &middot; {{ product.discountReason }}</dd>
+            }
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

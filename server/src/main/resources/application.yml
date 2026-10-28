@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: ld-sample-server
+  config:
+    # Lets you keep LAUNCHDARKLY_SDK_KEY in server/.env (gitignored) instead of exporting it.
+    import: optional:file:.env[.properties]
+
+launchdarkly:
+  # Server-side SDK key for your environment. It's a secret: set it in the environment, never commit it.
+  sdk-key: ${LAUNCHDARKLY_SDK_KEY:}
+  # Explicit init timeout. LaunchDarkly recommends 1–5s for server-side SDKs. The SDK default is 5s.
+  start-wait: 2s
+  # Application metadata, sent with every SDK request so LaunchDarkly can show which app and
+  # version connected. The version comes from pom.xml (Maven fills in @project.version@).
+  application-id: ld-spring-angular-react-server
+  application-version: "@project.version@"
+  # Optional: route the SDK through a Relay Proxy, e.g. http://localhost:8030
+  # relay-proxy-uri:
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.launchdarkly: INFO

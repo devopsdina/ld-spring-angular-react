@@ -1,0 +1,40 @@
+# Reproduces a corporate TLS-inspecting proxy (Zscaler, Netskope, ...) for the Spring Boot server:
+#
+#   docker compose -f compose.yaml -f compose.tls-intercept.yaml up --watch
+#
+# The server's LaunchDarkly traffic goes through mitmproxy, which decrypts each HTTPS connection and
+# re-signs it with its own CA. The JVM doesn't trust that CA, so the SDK fails with
+# "PKIX path building failed" and the app serves fallback values. The UIs are unaffected.
+#
+# mitmproxy's CA is kept in the mitmproxy-ca volume, so it stays the same across restarts. To fix
+# the error, trust that CA the way you'd trust a corporate one: put it in certs/ and restart.
+#
+#   docker compose -f compose.yaml -f compose.tls-intercept.yaml cp \
+#     mitmproxy:/home/mitmproxy/.mitmproxy/mitmproxy-ca-cert.pem ./certs/mitmproxy-root.crt
+#   docker compose -f compose.yaml -f compose.tls-intercept.yaml restart server
+
+services:
+  mitmproxy:
+    image: docker.io/mitmproxy/mitmproxy:12.3.1
+    # Logs each intercepted request, including the TLS handshake failures from the server.
+    #
+    # stream_large_bodies=1 passes responses through as they arrive. Remove it to reproduce a proxy
+    # that buffers responses: the SDK's streaming connection then never delivers flags, so the SDK
+    # times out even after the CA is trusted, with no PKIX error.
+    command: mitmdump --listen-host 0.0.0.0 --listen-port 8888 --set stream_large_bodies=1
+    volumes:
+      - mitmproxy-ca:/home/mitmproxy/.mitmproxy
+
+  server:
+    # Only the app's JVM uses the proxy; Maven itself still downloads directly.
+    command:
+      - ./mvnw
+      - -B
+      - -q
+      - spring-boot:run
+      - -Dspring-boot.run.jvmArguments=-Dhttps.proxyHost=mitmproxy -Dhttps.proxyPort=8888
+    depends_on:
+      - mitmproxy
+
+volumes:
+  mitmproxy-ca:

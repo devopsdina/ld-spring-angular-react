@@ -1,0 +1,4 @@
+node_modules
+dist
+# VITE_LD_CLIENT_SIDE_ID comes from compose.yaml's env_file instead.
+*.local

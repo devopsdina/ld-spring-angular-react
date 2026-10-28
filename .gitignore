@@ -1,0 +1,12 @@
+.DS_Store
+.env
+*.local
+/server/.env
+/angular/src/environments/environment.ts
+
+# mitmproxy CA exported for trust store testing
+mitmproxy-ca-cert.pem
+
+# Local CA certificates for the server container (see certs/README.md)
+certs/*.crt
+certs/*.pem

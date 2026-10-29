@@ -1,0 +1,15 @@
+# Development image: runs Quarkus dev mode, which reloads code on the next request after an edit,
+# including edits to launchdarkly-common. Built from the repo root (see compose.yaml).
+FROM docker.io/library/eclipse-temurin:17-jdk
+WORKDIR /app
+COPY .mvn .mvn
+COPY mvnw pom.xml ./
+# Maven reads every module listed in the root pom, so all three poms are needed.
+COPY launchdarkly-common launchdarkly-common
+COPY spring-boot/pom.xml spring-boot/pom.xml
+COPY quarkus/pom.xml quarkus/pom.xml
+RUN ./mvnw -B -q install -pl launchdarkly-common -DskipTests && ./mvnw -B -q -pl quarkus dependency:go-offline
+COPY quarkus quarkus
+EXPOSE 8081
+# In a container, dev mode must listen on all interfaces, and there's no terminal for its console.
+CMD ["sh", "-c", "./mvnw -B -q install -pl launchdarkly-common -DskipTests && exec ./mvnw -B -pl quarkus quarkus:dev -Dquarkus.http.host=0.0.0.0 -Dquarkus.console.enabled=false"]

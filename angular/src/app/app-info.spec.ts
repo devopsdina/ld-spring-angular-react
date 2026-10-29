@@ -5,7 +5,7 @@ describe('applicationInfo', () => {
   it('identifies the Angular app with the version from package.json', () => {
     expect(applicationInfo).toEqual({
       id: 'ld-spring-angular-react-angular',
-      name: 'LaunchDarkly Angular Order Form',
+      name: 'LaunchDarkly-Angular-Order-Form',
       version,
     });
     expect(version).toBe('1.0.0');

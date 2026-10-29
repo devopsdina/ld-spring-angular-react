@@ -29,6 +29,13 @@ export class MockLaunchDarklyClient {
     keys.forEach((key) => this.emit(`change:${key}`));
   }
 
+  /** Removes flags, so they evaluate to FLAG_NOT_FOUND, and fires change events. */
+  removeFlags(...keys: string[]): void {
+    keys.forEach((key) => delete this.flags[key]);
+    this.emit('change', keys);
+    keys.forEach((key) => this.emit(`change:${key}`));
+  }
+
   start = async () => ({ status: 'complete' as const });
   waitForInitialization = async () => ({ status: 'complete' as const });
   identify = async (context: LDContext) => {

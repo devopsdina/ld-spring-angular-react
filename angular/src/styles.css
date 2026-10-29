@@ -52,3 +52,18 @@ input {
   line-height: inherit;
   overflow: visible;
 }
+
+/* Which backend answered: the page, the card's top edge and the banner all change color, so a
+   switch between Spring Boot and Quarkus is obvious at a glance. body's data-backend is set by App; the
+   rest is in app.css. */
+body {
+  transition: background-color 0.4s ease;
+}
+
+body[data-backend='spring-boot'] {
+  background: #6db33f;
+}
+
+body[data-backend='quarkus'] {
+  background: #4695eb;
+}

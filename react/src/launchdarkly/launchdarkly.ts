@@ -34,6 +34,7 @@ export function createLaunchDarklyProvider(
   clientSideID: string,
   context: LDContext,
   options: LDReactClientOptions = {},
+  bootstrap?: unknown,
 ): LaunchDarklyProvider {
   if (provider) {
     console.warn(
@@ -45,6 +46,9 @@ export function createLaunchDarklyProvider(
     // Streaming keeps flags live, so hooks re-render when a flag changes in LaunchDarkly.
     ldOptions: { streaming: true, withReasons: true, ...options },
     startOptions: { timeout: INIT_TIMEOUT_SECONDS },
+    // Server-evaluated flags for `context`: hooks return these on the first render, before the
+    // SDK's own request to LaunchDarkly completes. See bootstrap.ts.
+    bootstrap,
   });
   return provider;
 }

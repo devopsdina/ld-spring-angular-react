@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Builds the shared LaunchDarkly module and both backends together: ./mvnw test runs every Java test.
+  This pom only lists the modules. It isn't their parent: spring-boot/ inherits from Spring Boot's
+  parent, and quarkus/ imports the Quarkus BOM, each as a new project from that framework would.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.launchdarkly.sample</groupId>
+	<artifactId>ld-spring-angular-react</artifactId>
+	<version>1.0.0</version>
+	<packaging>pom</packaging>
+	<name>ld-spring-angular-react</name>
+
+	<modules>
+		<module>launchdarkly-common</module>
+		<module>spring-boot</module>
+		<module>quarkus</module>
+	</modules>
+
+</project>

@@ -1,0 +1,13 @@
+{
+  "_about": "What GET /api/product/2 returns from either backend for the default user while LaunchDarkly is unreachable, apart from the backend field. The Spring Boot and Quarkus tests both check against this file, so the two can't drift apart.",
+  "response": {
+    "id": 2,
+    "name": "Camera",
+    "url": "http://ecx.images-amazon.com/images/I/61%2BABMMN5zL._SL1500_.jpg",
+    "type": "electronics",
+    "originalPrice": 600.00,
+    "price": 600.00,
+    "discount": 0.0,
+    "discountReason": "ERROR(CLIENT_NOT_READY)"
+  }
+}

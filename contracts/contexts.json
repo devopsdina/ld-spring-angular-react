@@ -1,0 +1,42 @@
+{
+  "_about": "The evaluation contexts the browsers and both backends must build for the same visitor: the default user (no email or plan in the URL) viewing product 2. The Java tests (launchdarkly-common), the Angular tests and the React tests all check against this file, so a change to a context's shape in one place fails a test until the others match. Targeting rules then match the same way everywhere.",
+  "users": {
+    "angular": {
+      "kind": "user",
+      "key": "abc123@gmail.com",
+      "email": "abc123@gmail.com",
+      "plan": "silver",
+      "framework": "angular"
+    },
+    "react": {
+      "kind": "user",
+      "key": "abc123@gmail.com",
+      "email": "abc123@gmail.com",
+      "plan": "silver",
+      "framework": "react"
+    }
+  },
+  "product": {
+    "kind": "product",
+    "key": "2",
+    "name": "Camera",
+    "type": "electronics",
+    "price": 600
+  },
+  "server": {
+    "kind": "multi",
+    "user": {
+      "key": "abc123@gmail.com",
+      "email": "abc123@gmail.com",
+      "plan": "silver",
+      "framework": "react",
+      "backend": "quarkus"
+    },
+    "product": {
+      "key": "2",
+      "name": "Camera",
+      "type": "electronics",
+      "price": 600
+    }
+  }
+}

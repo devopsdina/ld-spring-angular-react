@@ -1,4 +1,14 @@
-<div class="main">
+<div class="main" [attr.data-backend]="shown().id">
+  <div class="backendBanner" role="status">
+    <span class="backendEmoji" aria-hidden="true">{{ shown().emoji }}</span>
+    @if (product(); as product) {
+      Served by {{ product.backend.name }} {{ product.backend.version }}
+    } @else if (failed()) {
+      {{ shown().name }} unavailable
+    } @else {
+      Connecting to {{ shown().name }}&hellip;
+    }
+  </div>
   <div class="row">
     <div class="column">
       @if (product(); as product) {
@@ -14,8 +24,8 @@
             </div>
           </div>
         </div>
-      } @else if (error()) {
-        <p class="message">{{ error() }}</p>
+      } @else if (failed()) {
+        <p class="message">Could not load a product from {{ shown().name }}. Is it running?</p>
       } @else {
         <p class="message">Loading a product&hellip;</p>
       }
@@ -63,12 +73,28 @@
                 }
               }
             </dd>
-            <dt>enable-purchasing</dt>
+            <dt>enable-purchasing (client)</dt>
             <dd>{{ purchasing().value }} &middot; {{ purchaseReason() }}</dd>
-            @if (product(); as product) {
-              <dt>discount-pricing (server)</dt>
-              <dd>{{ product.discount }} &middot; {{ product.discountReason }}</dd>
-            }
+            <dt>api-backend (client)</dt>
+            <dd>{{ backend().description }}</dd>
+            <dt>discount-pricing (server)</dt>
+            <dd>
+              @if (product(); as product) {
+                {{ product.discount }} &middot; {{ product.discountReason }}
+              } @else {
+                &mdash;
+              }
+            </dd>
+            <dt>backend (server)</dt>
+            <dd>
+              @if (product(); as product) {
+                {{ shown().emoji }} {{ product.backend.name }} {{ product.backend.version }}
+              } @else if (failed()) {
+                {{ shown().emoji }} {{ shown().name }} &middot; unavailable
+              } @else {
+                &mdash;
+              }
+            </dd>
           </dl>
         </div>
       </div>

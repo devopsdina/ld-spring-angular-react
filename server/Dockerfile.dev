@@ -1,9 +1,0 @@
-# Development image: runs the app with Maven so `docker compose watch` can restart it after edits.
-FROM docker.io/library/eclipse-temurin:17-jdk
-WORKDIR /app
-COPY .mvn .mvn
-COPY mvnw pom.xml ./
-RUN ./mvnw -B -q dependency:go-offline
-COPY src src
-EXPOSE 8080
-CMD ["./mvnw", "-B", "-q", "spring-boot:run"]

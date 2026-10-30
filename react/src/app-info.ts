@@ -6,6 +6,6 @@ import { version } from '../package.json';
  */
 export const applicationInfo = {
   id: 'ld-spring-angular-react-react',
-  name: 'LaunchDarkly React Order Form',
+  name: 'LaunchDarkly-React-Order-Form',
   version,
 };

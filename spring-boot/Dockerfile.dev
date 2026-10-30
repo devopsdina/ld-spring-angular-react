@@ -1,0 +1,15 @@
+# Development image: runs the app with Maven so `docker compose watch` can restart it after edits.
+# Built from the repo root (see compose.yaml), because it needs launchdarkly-common too.
+FROM docker.io/library/eclipse-temurin:17-jdk
+WORKDIR /app
+COPY .mvn .mvn
+COPY mvnw pom.xml ./
+# Maven reads every module listed in the root pom, so all three poms are needed.
+COPY launchdarkly-common launchdarkly-common
+COPY spring-boot/pom.xml spring-boot/pom.xml
+COPY quarkus/pom.xml quarkus/pom.xml
+RUN ./mvnw -B -q install -pl launchdarkly-common -DskipTests && ./mvnw -B -q -pl spring-boot dependency:go-offline
+COPY spring-boot spring-boot
+EXPOSE 8080
+# Reinstalls launchdarkly-common first, so a restart after editing it picks up the change.
+CMD ["sh", "-c", "./mvnw -B -q install -pl launchdarkly-common -DskipTests && exec ./mvnw -B -q -pl spring-boot spring-boot:run"]

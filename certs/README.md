@@ -1,7 +1,7 @@
-# Extra CA certificates for the server
+# Extra CA certificates for the backends
 
-Every PEM file ending in `.crt` in this folder is added to the Spring Boot server container's Java
-trust store at startup. Use it when a TLS-inspecting proxy (Cato, Zscaler, Netskope, ...) re-signs
+Every PEM file ending in `.crt` in this folder is added to the Java trust store of both backend
+containers, Spring Boot and Quarkus, at startup. Use it when a TLS-inspecting proxy (Cato, Zscaler, Netskope, ...) re-signs
 HTTPS traffic with a corporate root CA, which shows up as `PKIX path building failed` in the logs.
 
 Add the **root CA** that signs the intercepted certificates, not a certificate exported from a
@@ -21,20 +21,23 @@ certificates are issued by a public CA that Java already trusts.
 ```
 
 Or copy a `.crt` file from IT into this folder. To use a different certificate, replace or add a
-file and restart the server: `docker compose restart server` (or `podman compose restart server`).
+file and restart the backends: `docker compose restart spring-boot quarkus` (or `podman compose ...`).
 
 The `.crt` and `.pem` files here are gitignored. Root CAs aren't secret, but they're specific to
 your network.
 
 ## How it works
 
-`compose.yaml` mounts this folder at `/certificates` in the server container and sets
+`compose.yaml` mounts this folder at `/certificates` in both backend containers and sets
 `USE_SYSTEM_CA_CERTS=1`. The `eclipse-temurin` base image's entrypoint then imports each
 `/certificates/*.crt` into the JVM trust store before the app starts, alongside the JDK's public CAs.
 With no files here, nothing changes.
 
+The fix is in the JVM, not the framework, so Spring Boot and Quarkus need no code for it.
+
 The same works in Kubernetes: mount the CA (for example from a Secret or ConfigMap) at
 `/certificates` and set `USE_SYSTEM_CA_CERTS=1` on any image built on `eclipse-temurin`.
 
-To try it without a corporate proxy, run `compose.tls-intercept.yaml` (see [Reproduce a TLS-inspecting proxy](../README.md#reproduce-a-tls-inspecting-proxy)): it puts
-mitmproxy between the server and LaunchDarkly, and its root CA plays the corporate CA.
+To try it without a corporate proxy, run `compose.tls-intercept.yaml` (see
+[Reproduce a TLS-inspecting proxy](../README.md#reproduce-a-tls-inspecting-proxy)): it puts mitmproxy
+between both backends and LaunchDarkly, and its root CA plays the corporate CA.

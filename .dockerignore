@@ -1,0 +1,9 @@
+# Build context for the two backends' images (the repo root, so they can include launchdarkly-common).
+# The SDK key comes from compose.yaml's env_file, so it's never baked into an image layer.
+**/.env
+**/target
+.git
+.vscode
+angular
+react
+certs

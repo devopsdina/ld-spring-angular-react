@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The LaunchDarkly code both backends share: plain Java and the LaunchDarkly SDK, with no Spring or
+  Quarkus dependencies. spring-boot/ and quarkus/ only wire it into their framework.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.launchdarkly.sample</groupId>
+	<artifactId>launchdarkly-common</artifactId>
+	<version>1.0.0</version>
+	<name>launchdarkly-common</name>
+	<description>LaunchDarkly client setup, contexts and flag evaluations shared by the Spring Boot and Quarkus backends</description>
+
+	<properties>
+		<maven.compiler.release>17</maven.compiler.release>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<!-- The one place the LaunchDarkly SDK version is set; both backends get it from here. -->
+		<launchdarkly.version>7.17.3</launchdarkly.version>
+		<slf4j.version>2.0.20</slf4j.version>
+		<junit.version>6.0.3</junit.version>
+		<assertj.version>3.27.7</assertj.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.launchdarkly</groupId>
+			<artifactId>launchdarkly-java-server-sdk</artifactId>
+			<version>${launchdarkly.version}</version>
+		</dependency>
+		<!-- Logging API only. Spring Boot sends it to Logback, Quarkus to its JBoss log manager. -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.assertj</groupId>
+			<artifactId>assertj-core</artifactId>
+			<version>${assertj.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>${slf4j.version}</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.14.0</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>3.5.3</version>
+			</plugin>
+			<!-- Publishes the test classes too, so both backends' tests can use HangingServer. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.4.2</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>test-jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

@@ -1,3 +1,0 @@
-target
-# The SDK key comes from compose.yaml's env_file, so it's never baked into an image layer.
-.env

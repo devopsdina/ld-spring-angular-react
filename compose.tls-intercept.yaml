@@ -1,22 +1,22 @@
-# Reproduces a corporate TLS-inspecting proxy (Zscaler, Netskope, ...) for the Spring Boot server:
+# Reproduces a corporate TLS-inspecting proxy (Zscaler, Netskope, ...) for both backends:
 #
 #   docker compose -f compose.yaml -f compose.tls-intercept.yaml up --watch
 #
-# The server's LaunchDarkly traffic goes through mitmproxy, which decrypts each HTTPS connection and
-# re-signs it with its own CA. The JVM doesn't trust that CA, so the SDK fails with
-# "PKIX path building failed" and the app serves fallback values. The UIs are unaffected.
+# Each backend's LaunchDarkly traffic goes through mitmproxy, which decrypts each HTTPS connection
+# and re-signs it with its own CA. The JVM doesn't trust that CA, so the SDK fails with
+# "PKIX path building failed" and the backend serves fallback values. The UIs are unaffected.
 #
 # mitmproxy's CA is kept in the mitmproxy-ca volume, so it stays the same across restarts. To fix
 # the error, trust that CA the way you'd trust a corporate one: put it in certs/ and restart.
 #
 #   docker compose -f compose.yaml -f compose.tls-intercept.yaml cp \
 #     mitmproxy:/home/mitmproxy/.mitmproxy/mitmproxy-ca-cert.pem ./certs/mitmproxy-root.crt
-#   docker compose -f compose.yaml -f compose.tls-intercept.yaml restart server
+#   docker compose -f compose.yaml -f compose.tls-intercept.yaml restart spring-boot quarkus
 
 services:
   mitmproxy:
     image: docker.io/mitmproxy/mitmproxy:12.3.1
-    # Logs each intercepted request, including the TLS handshake failures from the server.
+    # Logs each intercepted request, including the TLS handshake failures from the backends.
     #
     # stream_large_bodies=1 passes responses through as they arrive. Remove it to reproduce a proxy
     # that buffers responses: the SDK's streaming connection then never delivers flags, so the SDK
@@ -25,14 +25,27 @@ services:
     volumes:
       - mitmproxy-ca:/home/mitmproxy/.mitmproxy
 
-  server:
-    # Only the app's JVM uses the proxy; Maven itself still downloads directly.
+  # Only the apps' JVMs use the proxy; Maven itself still downloads directly. Each framework's Maven
+  # plugin takes JVM options its own way.
+  spring-boot:
     command:
-      - ./mvnw
-      - -B
-      - -q
-      - spring-boot:run
-      - -Dspring-boot.run.jvmArguments=-Dhttps.proxyHost=mitmproxy -Dhttps.proxyPort=8888
+      - sh
+      - -c
+      - >-
+        ./mvnw -B -q install -pl launchdarkly-common -DskipTests &&
+        exec ./mvnw -B -q -pl spring-boot spring-boot:run
+        "-Dspring-boot.run.jvmArguments=-Dhttps.proxyHost=mitmproxy -Dhttps.proxyPort=8888"
+    depends_on:
+      - mitmproxy
+
+  quarkus:
+    command:
+      - sh
+      - -c
+      - >-
+        ./mvnw -B -q install -pl launchdarkly-common -DskipTests &&
+        exec ./mvnw -B -pl quarkus quarkus:dev -Dquarkus.http.host=0.0.0.0 -Dquarkus.console.enabled=false
+        "-Djvm.args=-Dhttps.proxyHost=mitmproxy -Dhttps.proxyPort=8888"
     depends_on:
       - mitmproxy
 

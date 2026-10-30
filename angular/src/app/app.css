@@ -152,3 +152,37 @@
 .flagInfo dd {
   margin: 0 0 8px;
 }
+
+/* Which backend answered (the page background is in styles.css). */
+.main[data-backend='spring-boot'] {
+  border-top: 6px solid #3d7a24;
+}
+
+.main[data-backend='quarkus'] {
+  border-top: 6px solid #ff004a;
+}
+
+.backendBanner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: white;
+  transition: background-color 0.4s ease;
+}
+
+.main[data-backend='spring-boot'] .backendBanner {
+  background: #3d7a24;
+}
+
+.main[data-backend='quarkus'] .backendBanner {
+  background: #0d1c2c;
+  box-shadow: inset 6px 0 0 #ff004a;
+}
+
+.backendEmoji {
+  font-size: 1.3rem;
+}

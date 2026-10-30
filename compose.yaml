@@ -1,39 +1,76 @@
-# Runs the server and both UIs with live reload:
+# Runs both backends and both UIs with live reload:
 #
 #   docker compose up --watch
 #
-# Server http://localhost:8080 · Angular http://localhost:4200 · React http://localhost:3000
+# Spring Boot http://localhost:8080 · Quarkus http://localhost:8081
+# Angular http://localhost:4200 · React http://localhost:3000
 #
-# Needs server/.env (LAUNCHDARKLY_SDK_KEY), react/.env.local (VITE_LD_CLIENT_SIDE_ID) and
-# angular/src/environments/environment.ts (clientSideID). See the README.
+# Needs spring-boot/.env and quarkus/.env (LAUNCHDARKLY_SDK_KEY), react/.env.local
+# (VITE_LD_CLIENT_SIDE_ID) and angular/src/environments/environment.ts (clientSideID). See the
+# README. Two JVMs and two Node dev servers need about 3–4 GB of memory.
 name: ld-spring-angular-react
 
 services:
-  server:
+  spring-boot:
     build:
-      context: ./server
-      dockerfile: Dockerfile.dev
+      # The repo root, so the image can include launchdarkly-common.
+      context: .
+      dockerfile: spring-boot/Dockerfile.dev
     ports:
       - "8080:8080"
     env_file:
-      - path: ./server/.env
+      - path: ./spring-boot/.env
         required: true
     environment:
       # Adds every certs/*.crt to the JVM trust store at startup, for TLS-inspecting proxies.
       # See certs/README.md. With no files in certs/, nothing changes.
       USE_SYSTEM_CA_CERTS: "1"
     volumes:
-      # Keeps downloaded Maven dependencies between restarts.
-      - maven-cache:/root/.m2
+      # Keeps downloaded Maven dependencies between restarts. Each backend has its own cache, since
+      # both install launchdarkly-common into it when they start.
+      - maven-cache-spring-boot:/root/.m2
       - ./certs:/certificates:ro
     develop:
       watch:
         # Java isn't hot-swapped: an edit syncs in and restarts the container, which recompiles.
         - action: sync+restart
-          path: ./server/src
-          target: /app/src
+          path: ./spring-boot/src
+          target: /app/spring-boot/src
+        - action: sync+restart
+          path: ./launchdarkly-common/src
+          target: /app/launchdarkly-common/src
         - action: rebuild
-          path: ./server/pom.xml
+          path: ./spring-boot/pom.xml
+        - action: rebuild
+          path: ./launchdarkly-common/pom.xml
+
+  quarkus:
+    build:
+      context: .
+      dockerfile: quarkus/Dockerfile.dev
+    ports:
+      - "8081:8081"
+    env_file:
+      - path: ./quarkus/.env
+        required: true
+    environment:
+      USE_SYSTEM_CA_CERTS: "1"
+    volumes:
+      - maven-cache-quarkus:/root/.m2
+      - ./certs:/certificates:ro
+    develop:
+      watch:
+        # Quarkus dev mode reloads on the next request after an edit, without a restart.
+        - action: sync
+          path: ./quarkus/src
+          target: /app/quarkus/src
+        - action: sync
+          path: ./launchdarkly-common/src
+          target: /app/launchdarkly-common/src
+        - action: rebuild
+          path: ./quarkus/pom.xml
+        - action: rebuild
+          path: ./launchdarkly-common/pom.xml
 
   angular:
     build:
@@ -42,9 +79,11 @@ services:
     ports:
       - "4200:4200"
     environment:
-      API_PROXY_TARGET: http://server:8080
+      SPRING_BOOT_URL: http://spring-boot:8080
+      QUARKUS_URL: http://quarkus:8081
     depends_on:
-      - server
+      - spring-boot
+      - quarkus
     develop:
       watch:
         - action: sync
@@ -65,9 +104,11 @@ services:
       - path: ./react/.env.local
         required: true
     environment:
-      API_PROXY_TARGET: http://server:8080
+      SPRING_BOOT_URL: http://spring-boot:8080
+      QUARKUS_URL: http://quarkus:8081
     depends_on:
-      - server
+      - spring-boot
+      - quarkus
     develop:
       watch:
         - action: sync
@@ -82,4 +123,5 @@ services:
           path: ./react/vite.config.ts
 
 volumes:
-  maven-cache:
+  maven-cache-spring-boot:
+  maven-cache-quarkus:

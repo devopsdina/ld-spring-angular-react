@@ -1,7 +1,9 @@
 .DS_Store
 .env
 *.local
-/server/.env
+target/
+/spring-boot/.env
+/quarkus/.env
 /angular/src/environments/environment.ts
 
 # mitmproxy CA exported for trust store testing

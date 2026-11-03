@@ -275,7 +275,7 @@ mitmproxy has its own CA, so copy it out with `podman compose`.
 | Init timeout | `startWait` 2s (`launchdarkly.start-wait`; 1–5s recommended) | `start({ timeout: 0.5 })` | `startOptions: { timeout: 0.5 }` |
 | Never blocks on LaunchDarkly | The constructor returns after `startWait` either way; the app starts and serves fallbacks | `provideLaunchDarklyClient()` holds the first render for at most 500ms | The provider renders immediately; hooks return fallbacks until flags load |
 | Identify timeout | Not applicable: server evaluations take the context directly | `identify(ctx, { timeout: 0.5 })` | `identify(ctx, { timeout: 0.5 })` |
-| Evaluation reasons | Always computed on the server; read with `doubleVariationDetail` | `withReasons: true`; read with `flagDetailSignal()` | `withReasons: true`; read with `useBoolVariationDetail()` |
+| Evaluation reasons | Always computed on the server; read through [`FlagService`](server/src/main/java/com/launchdarkly/sample/launchdarkly/FlagService.java), which calls the `*VariationDetail` methods | `withReasons: true`; read with `flagDetailSignal()` | `withReasons: true`; read with `useBoolVariationDetail()` |
 | Application metadata | `applicationInfo` from `launchdarkly.application-id` / `application-version` (version from `pom.xml`) | `applicationInfo` in [`app-info.ts`](angular/src/app/app-info.ts) (version from `package.json`) | `applicationInfo` in [`app-info.ts`](react/src/app-info.ts) (version from `package.json`) |
 | Connection visible | Logs every connection change; state at `/actuator/health` | Status shown in the UI and logged | Status shown in the UI (`useInitializationStatus()`) |
 
@@ -300,9 +300,24 @@ all at `1.0.0`. The JavaScript SDKs also send a display name.
   `lastError` (for example `ERROR_RESPONSE(401)` for a bad SDK key). It always reports UP: the app keeps
   working on fallback values, and restarting it wouldn't fix the connection, so it shouldn't fail a
   liveness or readiness probe.
+- [`FlagService`](server/src/main/java/com/launchdarkly/sample/launchdarkly/FlagService.java)
+  is the one way the server reads a flag, the Java counterpart of Angular's `flagDetailSignal()`. Its
+  `getBoolFlag`, `getStringFlag`, `getIntFlag`, `getDoubleFlag` and `getJsonFlag` methods call the
+  SDK's typed `*VariationDetail` methods and return the value with its reason. Each `ERROR` reason
+  (a missing flag, the wrong type, or LaunchDarkly not connected yet) is logged once per flag. Code
+  that reads flags injects `FlagService`, never `LDClient`, and reads the flag inside the decision it
+  controls:
+
+  ```java
+  // Fallback false: fail closed (new feature).
+  if (flags.getBoolFlag("new-checkout", context, false).getValue()) {
+      return newCheckout(order);
+  }
+  return legacyCheckout(order);
+  ```
 - [`ProductController`](server/src/main/java/com/launchdarkly/sample/product/ProductController.java)
-  evaluates `discount-pricing` with `doubleVariationDetail`, logs any `ERROR` reason, and returns the
-  reason with the product (`discountReason`). Visitors without a `userKey` share one anonymous key, so
+  evaluates `discount-pricing` with `flags.getDoubleFlag(...)` and returns the reason with the product
+  (`discountReason`). Visitors without a `userKey` share one anonymous key, so
   each request doesn't create a new context in LaunchDarkly.
 - If outbound HTTPS goes through a TLS-inspecting proxy, add the proxy's CA to the JVM trust store;
   LaunchDarkly's own certificates are publicly trusted. See

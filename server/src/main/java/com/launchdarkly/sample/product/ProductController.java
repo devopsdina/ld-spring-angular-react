@@ -3,11 +3,10 @@ package com.launchdarkly.sample.product;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
+import com.launchdarkly.sample.launchdarkly.FlagService;
 import com.launchdarkly.sdk.ContextKind;
 import com.launchdarkly.sdk.EvaluationDetail;
-import com.launchdarkly.sdk.EvaluationReason;
 import com.launchdarkly.sdk.LDContext;
-import com.launchdarkly.sdk.server.LDClient;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,11 +30,11 @@ public class ProductController {
 
 	private static final Logger log = LoggerFactory.getLogger(ProductController.class);
 
-	private final LDClient ldClient;
+	private final FlagService flags;
 	private final ProductCatalog catalog;
 
-	public ProductController(LDClient ldClient, ProductCatalog catalog) {
-		this.ldClient = ldClient;
+	public ProductController(FlagService flags, ProductCatalog catalog) {
+		this.flags = flags;
 		this.catalog = catalog;
 	}
 
@@ -56,12 +55,8 @@ public class ProductController {
 		// e.g. "50% off products over $100 for gold-plan users".
 		LDContext context = LDContext.createMulti(user, productContext(product));
 
-		// The Detail variant returns the reason along with the value.
-		EvaluationDetail<Double> detail = ldClient.doubleVariationDetail(DISCOUNT_FLAG, context, DISCOUNT_FALLBACK);
-		EvaluationReason reason = detail.getReason();
-		if (reason.getKind() == EvaluationReason.Kind.ERROR) {
-			log.warn("Flag {} served the fallback value: {}", DISCOUNT_FLAG, reason.getErrorKind());
-		}
+		// FlagService returns the reason along with the value, and logs any ERROR reason once.
+		EvaluationDetail<Double> detail = flags.getDoubleFlag(DISCOUNT_FLAG, context, DISCOUNT_FALLBACK);
 
 		double discount = detail.getValue();
 		if (discount < 0 || discount > 1) {
@@ -72,7 +67,7 @@ public class ProductController {
 		BigDecimal price = product.price().subtract(discountAmount).setScale(2, RoundingMode.HALF_UP);
 
 		return new ProductOffer(product.id(), product.name(), product.url(), product.type(), product.price(), price,
-				discount, reason.toString());
+				discount, detail.getReason().toString());
 	}
 
 	static LDContext userContext(String userKey, String email, String plan, String framework) {

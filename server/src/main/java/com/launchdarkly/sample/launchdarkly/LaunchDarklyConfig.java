@@ -25,7 +25,7 @@ import org.springframework.util.StringUtils;
  * </ol>
  *
  * Server-side SDKs have no option to turn evaluation reasons on: every evaluation computes one.
- * Call the {@code *VariationDetail} methods to get it, as {@code ProductController} does.
+ * {@link FlagService} calls the {@code *VariationDetail} methods, so every flag read returns it.
  */
 @Configuration
 public class LaunchDarklyConfig {
@@ -36,6 +36,12 @@ public class LaunchDarklyConfig {
 	@Bean(destroyMethod = "close")
 	public LDClient ldClient(LaunchDarklyProperties properties) {
 		return createClient(properties, new LDConfig.Builder());
+	}
+
+	// Code that reads flags injects this, never the LDClient.
+	@Bean
+	public FlagService flagService(LDClient ldClient) {
+		return new FlagService(ldClient);
 	}
 
 	/** Builds and starts the client. Tests call this directly with their own data source. */

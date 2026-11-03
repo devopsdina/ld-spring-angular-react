@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
 
+import com.launchdarkly.sample.launchdarkly.FlagService;
 import com.launchdarkly.sdk.ContextKind;
 import com.launchdarkly.sdk.LDValue;
 import com.launchdarkly.sdk.server.Components;
@@ -27,7 +28,7 @@ class ProductControllerTest {
 	void setUp() {
 		flags = TestData.dataSource();
 		client = new LDClient("sdk-test-key", new LDConfig.Builder().dataSource(flags).events(Components.noEvents()).build());
-		controller = new ProductController(client, new ProductCatalog());
+		controller = new ProductController(new FlagService(client), new ProductCatalog());
 	}
 
 	@AfterEach
